@@ -1,8 +1,10 @@
 package api
 
 import (
+	"fmt"
 	"ledggo/domain"
 	"ledggo/ledger"
+	"ledggo/p2p"
 	"ledggo/utils"
 	"net/http"
 
@@ -14,14 +16,7 @@ func GetKnownNodes(c *gin.Context) {
 }
 
 func GetBlocks(c *gin.Context) {
-	var blocks []domain.Block
-
-	if err := ledger.GetBlocks(&blocks); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, blocks)
+	c.JSON(http.StatusOK, utils.Blocks)
 }
 
 func GetBlock(c *gin.Context) {
@@ -43,7 +38,28 @@ func PostBlock(c *gin.Context) {
 		return
 	}
 
-	ledger.AddNewBlock(block)
+	if block.Hash == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Block hash is required"})
+		return
+	}
+
+	if block.Data == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Block data is required"})
+		return
+	}
+
+	if _, err := ledger.GetBlockWithHash(block.Hash); err == nil {
+		c.Status(http.StatusOK)
+		return
+	}
+
+	if err := ledger.AddNewBlock(block); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		fmt.Println(err.Error())
+		return
+	}
+
+	p2p.DistributeNewBlock(block, c.Request.RemoteAddr)
 
 	c.Status(http.StatusOK)
 }

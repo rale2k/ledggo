@@ -1,35 +1,19 @@
 package main
 
 import (
-	"fmt"
+	"flag"
 	"ledggo/api"
 	"ledggo/utils"
-	"os"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
-	var port = utils.DefaultPort
+	var port = flag.Int("port", 8080, "Port to run the node on")
+	flag.Parse()
 
-	if err := utils.GetOpenPort(&port); err != nil {
-		fmt.Println(err.Error())
-		os.Exit(0)
-	}
-
-	nodes, err := utils.ReadConfig()
-	if err != nil {
-		fmt.Println(err.Error())
-		os.Exit(0)
-	}
-
-	utils.Nodes = nodes
-
-	if err := utils.CreateBlockFileIfNotExists(); err != nil {
-		fmt.Println(err.Error())
-		os.Exit(0)
-	}
+	utils.AppendNodes(flag.Args())
 
 	router := gin.Default()
 
@@ -38,5 +22,5 @@ func main() {
 	router.GET("/blocks", api.GetBlocks)
 	router.POST("/block", api.PostBlock)
 
-	router.Run("localhost:" + strconv.Itoa(port))
+	router.Run("localhost:" + strconv.Itoa(*port))
 }

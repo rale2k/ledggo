@@ -1,8 +1,6 @@
 package ledger
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"ledggo/domain"
@@ -10,35 +8,16 @@ import (
 )
 
 func AddNewBlock(block domain.Block) error {
-	data, err := utils.ReadBlockDataFromFile()
-	if err != nil {
+	if err := validateBlockHash(&block, utils.Blocks); err != nil {
 		return err
 	}
 
-	var blocks []domain.Block
-	if err := json.Unmarshal(data, &blocks); err != nil {
-		return err
-	}
-
-	setBlockHash(&block, blocks)
-
-	blocks = append(blocks, block)
-
-	return utils.WriteBlockDataToFile(blocks)
+	utils.Blocks = append(utils.Blocks, block)
+	return nil
 }
 
 func GetBlockWithHash(hash string) (block domain.Block, err error) {
-	data, err := utils.ReadBlockDataFromFile()
-	if err != nil {
-		return domain.Block{}, err
-	}
-
-	var blocks []domain.Block
-	if err := json.Unmarshal(data, &blocks); err != nil {
-		return domain.Block{}, err
-	}
-
-	for _, block := range blocks {
+	for _, block := range utils.Blocks {
 		if block.Hash == hash {
 			return block, nil
 		}
@@ -46,6 +25,11 @@ func GetBlockWithHash(hash string) (block domain.Block, err error) {
 
 	return domain.Block{}, fmt.Errorf("could not find block with hash: %s", hash)
 
+}
+
+func BlockExists(hash string) bool {
+	_, err := GetBlockWithHash(hash)
+	return err == nil
 }
 
 func GetBlocks(blocks *[]domain.Block) error {
@@ -62,13 +46,19 @@ func GetBlocks(blocks *[]domain.Block) error {
 	return nil
 }
 
-func setBlockHash(newBlock *domain.Block, previousBlocks []domain.Block) {
+func validateBlockHash(newBlock *domain.Block, previousBlocks []domain.Block) error {
+	var hash string
+
 	if len(previousBlocks) > 0 {
 		lastBlock := previousBlocks[len(previousBlocks)-1]
-		x := sha256.Sum256([]byte(newBlock.Data + lastBlock.Hash))
-		newBlock.Hash = hex.EncodeToString(x[:])
+		hash = utils.GetSha256Hash(newBlock.Data + lastBlock.Hash)
 	} else {
-		x := sha256.Sum256([]byte(newBlock.Data))
-		newBlock.Hash = hex.EncodeToString(x[:])
+		hash = utils.GetSha256Hash(newBlock.Data)
 	}
+
+	if newBlock.Hash != hash {
+		return fmt.Errorf("block hash is invalid")
+	}
+
+	return nil
 }
