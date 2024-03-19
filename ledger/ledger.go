@@ -1,7 +1,6 @@
 package ledger
 
 import (
-	"encoding/json"
 	"fmt"
 	"ledggo/domain"
 	"ledggo/utils"
@@ -30,20 +29,6 @@ func GetBlockWithHash(hash string) (block domain.Block, err error) {
 func BlockExists(hash string) bool {
 	_, err := GetBlockWithHash(hash)
 	return err == nil
-}
-
-func GetBlocks(blocks *[]domain.Block) error {
-	data, err := utils.ReadBlockDataFromFile()
-	if err != nil {
-		return err
-	}
-
-	err = json.Unmarshal(data, &blocks)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func validateBlockHash(newBlock *domain.Block, previousBlocks []domain.Block) error {

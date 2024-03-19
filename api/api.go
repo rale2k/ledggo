@@ -12,7 +12,7 @@ import (
 )
 
 func GetKnownNodes(c *gin.Context) {
-	c.IndentedJSON(http.StatusOK, utils.Nodes)
+	c.JSON(http.StatusOK, utils.Nodes)
 }
 
 func GetBlocks(c *gin.Context) {
