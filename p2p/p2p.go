@@ -33,3 +33,32 @@ func DistributeNewBlock(block domain.Block, remoteAddr string) {
 		}
 	}
 }
+
+func GetNodesFromNode(node domain.Node) ([]domain.Node, error) {
+	url := fmt.Sprintf("http://%s:%s/nodes", node.Ip, node.Port)
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	var nodes []domain.Node
+	err = json.NewDecoder(resp.Body).Decode(&nodes)
+	if err != nil {
+		return nil, err
+	}
+
+	return nodes, nil
+}
+
+func GetNodesFromKnownNodes() {
+	for _, node := range utils.Nodes {
+		newNodes, err := GetNodesFromNode(node)
+
+		if err != nil {
+			continue
+		}
+
+		utils.AppendNodes(newNodes)
+	}
+}

@@ -1,11 +1,63 @@
 import sys
 import os
 import socket
+import json
+from flask import Flask, jsonify, request
+import requests
+
+app = Flask(__name__)
+
+def get_nodes():
+    nodes = {}
+    for ip_port in app.config['nodes']:
+        ip, port = ip_port.split(':')
+        url = f"http://{ip}:{port}/nodes"
+        try:
+            response = requests.get(url)
+            if response.status_code == 200:
+                nodes[ip_port] = response.json()
+        except requests.RequestException as e:
+            print(f"Error getting nodes from {ip}:{port}: {e}")
+    return nodes
+
+def get_blocks():
+    blocks = {}
+    for ip_port in app.config['nodes']:
+        ip, port = ip_port.split(':')
+        url = f"http://{ip}:{port}/blocks"
+        try:
+            response = requests.get(url)
+            if response.status_code == 200:
+                blocks[ip_port] = response.json()
+        except requests.RequestException as e:
+            print(f"Error getting blocks from {ip}:{port}: {e}")
+    return blocks
+
+@app.route('/nodes')
+def nodes():
+    return jsonify(get_nodes())
+
+@app.route('/blocks/<hash>')
+def block(hash):
+    blocks = {}
+    for ip_port in app.config['nodes']:
+        ip, port = ip_port.split(':')
+        url = f"http://{ip}:{port}/blocks/{hash}"
+        try:
+            response = requests.get(url)
+            blocks[ip_port] = response.status_code == 200
+        except requests.RequestException as e:
+            print(f"Error getting block {hash} from {ip}:{port}: {e}")
+    return jsonify(blocks)
+
+@app.route('/blocks')
+def all_blocks():
+    return jsonify(get_blocks())
 
 def launch_ledggo(port, previous_ips):
     try:
-        previous_ips_str = ' '.join(previous_ips)
-        os.execl("./ledggo", "ledggo", f"-port={port}", previous_ips_str)
+        previous_ips_str = ';'.join(previous_ips)
+        os.execl("./ledggo", "ledggo", f"-port={port}", f"-nodes={previous_ips_str}")
     except OSError as e:
         print(f"Error launching ledggo: {e}")
         sys.exit(1)
@@ -41,9 +93,9 @@ def main():
         else:
             ip = "127.0.0.1"
             previous_ips.append(f"{ip}:{port}")
-
-    for _ in range(count):
-        os.wait()
+            
+    app.config['nodes'] = previous_ips
+    app.run(host='0.0.0.0', port=8000)
 
 if __name__ == "__main__":
     main()

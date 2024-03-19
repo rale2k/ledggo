@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"ledggo/api"
+	"ledggo/p2p"
 	"ledggo/utils"
 	"strconv"
 
@@ -11,9 +12,11 @@ import (
 
 func main() {
 	var port = flag.Int("port", 8080, "Port to run the node on")
+	var nodes = flag.String("nodes", "", "{ip}:{port} of known nodes to connect to separated by semicolons")
 	flag.Parse()
 
-	utils.AppendNodes(flag.Args())
+	utils.AppendNodesFromString(*nodes)
+	p2p.GetNodesFromKnownNodes()
 
 	router := gin.Default()
 
