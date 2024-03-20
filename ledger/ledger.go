@@ -6,6 +6,14 @@ import (
 	"ledggo/utils"
 )
 
+func GetLastBlock() (block domain.Block, err error) {
+	if len(utils.Blocks) == 0 {
+		return domain.Block{}, fmt.Errorf("no blocks found")
+	}
+
+	return utils.Blocks[len(utils.Blocks)-1], nil
+}
+
 func AddNewBlock(block domain.Block) error {
 	if err := validateBlockHash(&block, utils.Blocks); err != nil {
 		return err

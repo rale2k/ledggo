@@ -11,19 +11,23 @@ import (
 )
 
 func main() {
-	var port = flag.Int("port", 8080, "Port to run the node on")
+	var port = flag.Int("port", utils.RunningPort, "Port to run the node on")
 	var nodes = flag.String("nodes", "", "{ip}:{port} of known nodes to connect to separated by semicolons")
 	flag.Parse()
 
-	utils.AppendNodesFromString(*nodes)
+	utils.RunningPort = *port
+
+	utils.AppendNodesFromIPStringCSV(*nodes)
 	p2p.GetNodesFromKnownNodes()
 
 	router := gin.Default()
 
+	router.Use(utils.SaveNodeRequestIp)
+
 	router.GET("/nodes", api.GetKnownNodes)
-	router.GET("/blocks/:hash", api.GetBlock)
-	router.GET("/blocks", api.GetBlocks)
-	router.POST("/block", api.PostBlock)
+	router.GET("/blocks", api.GetBlock)
+	router.GET("/blocks/last", api.GetLastBlock)
+	router.POST("/blocks", api.PostBlock)
 
 	router.Run("localhost:" + strconv.Itoa(*port))
 }

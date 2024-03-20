@@ -15,12 +15,24 @@ func GetKnownNodes(c *gin.Context) {
 	c.JSON(http.StatusOK, utils.Nodes)
 }
 
-func GetBlocks(c *gin.Context) {
-	c.JSON(http.StatusOK, utils.Blocks)
+func GetLastBlock(c *gin.Context) {
+	lastBlock, err := ledger.GetLastBlock()
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, lastBlock)
 }
 
 func GetBlock(c *gin.Context) {
-	var hash = c.Param("hash")
+	var hash = c.Query("hash")
+
+	if hash == "" {
+		c.JSON(http.StatusOK, utils.Blocks)
+		return
+	}
 
 	block, err := ledger.GetBlockWithHash(hash)
 	if err != nil {
@@ -59,7 +71,7 @@ func PostBlock(c *gin.Context) {
 		return
 	}
 
-	p2p.DistributeNewBlock(block, c.Request.RemoteAddr)
+	go p2p.DistributeNewBlock(block, c.Request.RemoteAddr)
 
 	c.Status(http.StatusOK)
 }
