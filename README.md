@@ -15,6 +15,7 @@ When nodes communicate with eachother, they use a http header named ```node-ip``
 ### Problems
 * On a single machine(ryzen 7600x) up to 200 nodes work somewhat smoothly. More  nodes may work if the transactions are submitted at a slow rate.
 * Because of the agressive peer discovery, eventually, most of the time all nodes know all other nodes. With a large network the flooding of new blocks is very severe.
+* If a node gets the same block from 2 neighbours at the same time, there may be a race condition where they both check that the block is valid, and they both add it into the chain. Needs a lock or something.
 
 ## Prerequisites
 - Go 1.22 or higher
