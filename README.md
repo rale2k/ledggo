@@ -58,6 +58,8 @@ When nodes communicate with eachother, they use a http header named ```node-ip``
 
 **GET /blocks** - Returns all blocks saved.
 
+**GET /blocks/length** - Returns length of the ledger.
+
 **GET /blocks/last** - Returns the latest block saved.
 
 **POST /blocks** - Saves a new block and distributes it to all known nodes.
