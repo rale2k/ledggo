@@ -15,6 +15,10 @@ func GetKnownNodes(c *gin.Context) {
 	c.JSON(http.StatusOK, utils.Nodes)
 }
 
+func GetLedgerLength(c *gin.Context) {
+	c.JSON(http.StatusOK, ledger.GetLedgerLength())
+}
+
 func GetLastBlock(c *gin.Context) {
 	lastBlock, err := ledger.GetLastBlock()
 

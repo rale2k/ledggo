@@ -19,6 +19,7 @@ func main() {
 
 	utils.AppendNodesFromIPStringCSV(*nodes)
 	p2p.GetNodesFromKnownNodes()
+	p2p.QueryLedgerFromNodes()
 
 	router := gin.Default()
 
@@ -27,6 +28,7 @@ func main() {
 	router.GET("/nodes", api.GetKnownNodes)
 	router.GET("/blocks", api.GetBlock)
 	router.GET("/blocks/last", api.GetLastBlock)
+	router.GET("/blocks/count", api.GetLedgerLength)
 	router.POST("/blocks", api.PostBlock)
 
 	router.Run("localhost:" + strconv.Itoa(*port))

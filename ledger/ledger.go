@@ -6,6 +6,10 @@ import (
 	"ledggo/utils"
 )
 
+func GetLedgerLength() int {
+	return len(utils.Blocks)
+}
+
 func GetLastBlock() (block domain.Block, err error) {
 	if len(utils.Blocks) == 0 {
 		return domain.Block{}, fmt.Errorf("no blocks found")
