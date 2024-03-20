@@ -107,7 +107,6 @@ def all_blocks():
 
 @app.route('/latest_blocks')
 def latest_blocks():
-    """Endpoint to get the latest block of each node."""
     nodes = app.config['nodes']
     latest_blocks = {}
     for node in nodes:
