@@ -10,10 +10,19 @@ import (
 )
 
 func QueryLedgerFromNodes() error {
+	if utils.State.Role == domain.NODE {
+		ledger, err := GetLedgerFromNode(utils.State.Coordinator)
+		if err != nil {
+			return err
+		}
+
+		utils.Blocks = ledger
+	}
+
 	var longestLedgerLength int
 	var longestLedgerNode domain.Node
 
-	for _, node := range utils.Nodes {
+	for _, node := range utils.State.Nodes {
 		ledgerLength, err := GetLedgerLengthFromNode(node)
 		if err != nil {
 			continue
@@ -40,7 +49,7 @@ func QueryLedgerFromNodes() error {
 }
 
 func DistributeNewBlock(block domain.Block, remoteAddr string) {
-	for _, node := range utils.Nodes {
+	for _, node := range utils.State.Nodes {
 		// Don't send the block to the node that sent it to us
 		if remoteAddr == fmt.Sprintf("%s:%s", node.Ip, node.Port) {
 			continue
@@ -53,24 +62,44 @@ func DistributeNewBlock(block domain.Block, remoteAddr string) {
 		}
 
 		reqBody := []byte(blockJson)
-		// TODO: should use a thread pool or something, this may get out of hand with many nodes
-		go utils.DoRequestToNode("POST", "/blocks", reqBody, node)
+		response, _ := utils.DoRequestToNode("POST", "/blocks", reqBody, node)
+
+		if 400 <= response.StatusCode && response.StatusCode < 500 {
+			CancelBlocksInTx()
+			b, _ := io.ReadAll(response.Body)
+			fmt.Printf("Error distributing block tx: %v\n", string(b))
+			return
+		}
+	}
+
+	CommitBlocksInTx()
+}
+
+func CommitBlocksInTx() {
+	for _, node := range utils.State.Nodes {
+		go utils.DoRequestToNode("POST", "/commit", nil, node)
 	}
 }
 
-func GetNodesFromNode(node domain.Node) ([]domain.Node, error) {
-	resp, err := utils.DoRequestToNode("GET", "/nodes", nil, node)
+func CancelBlocksInTx() {
+	for _, node := range utils.State.Nodes {
+		go utils.DoRequestToNode("POST", "/cancel", nil, node)
+	}
+}
+
+func GetNodeInfo(node domain.Node) (domain.State, error) {
+	resp, err := utils.DoRequestToNode("GET", "/info", nil, node)
 	if err != nil {
-		return nil, err
+		return domain.State{}, err
 	}
 
-	var nodes []domain.Node
-	err = json.NewDecoder(resp.Body).Decode(&nodes)
+	var state domain.State
+	err = json.NewDecoder(resp.Body).Decode(&state)
 	if err != nil {
-		return nil, err
+		return domain.State{}, err
 	}
 
-	return nodes, nil
+	return state, nil
 }
 
 func GetLedgerFromNode(node domain.Node) ([]domain.Block, error) {
@@ -105,13 +134,21 @@ func GetLedgerLengthFromNode(node domain.Node) (int, error) {
 }
 
 func GetNodesFromKnownNodes() {
-	for _, node := range utils.Nodes {
-		newNodes, err := GetNodesFromNode(node)
+	for _, node := range utils.State.Nodes {
+		state, err := GetNodeInfo(node)
+
+		if state.Role == domain.COORDINATOR {
+			utils.SetCoordinator(node)
+		}
+
+		if state.Role == domain.NODE {
+			utils.SetCoordinator(state.Coordinator)
+		}
 
 		if err != nil {
 			continue
 		}
 
-		utils.AppendNodes(newNodes)
+		utils.AppendNodes(state.Nodes)
 	}
 }

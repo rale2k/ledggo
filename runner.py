@@ -10,11 +10,11 @@ import requests
 
 app = Flask(__name__)
 
-def get_nodes():
+def get_nodes_info():
     nodes = {}
     for ip_port in app.config['nodes']:
         ip, port = ip_port.split(':')
-        url = f"http://{ip}:{port}/nodes"
+        url = f"http://{ip}:{port}/info"
         try:
             response = requests.get(url)
             if response.status_code == 200:
@@ -43,7 +43,7 @@ def select_random_node():
 def handle_generate_block():
     random_node = select_random_node()
     ip, port = random_node.split(':')
-    latest_block_url = f"http://{ip}:{port}/blocks/last"
+    latest_block_url = f"http://{ip}:8080/blocks/last"
     try:
         response = requests.get(latest_block_url)
         latest_block = response.json()
@@ -52,16 +52,16 @@ def handle_generate_block():
         concatenated_string = random_string + latest_block_hash
         block_hash = hashlib.sha256(concatenated_string.encode()).hexdigest()
         new_block = {
-            "origin": f"{ip}:{port}",
+            "origin": f"{ip}:8080",
             "hash": block_hash,
             "data": random_string
         }
-        post_block_url = f"http://{ip}:{port}/blocks"
+        post_block_url = f"http://{ip}:8080/blocks"
         response = requests.post(post_block_url, json=new_block)
         if response.status_code == 200:
             return new_block, 200
         else:
-            return "Failed to post the block.", 500
+            return response.text, 500
     except requests.RequestException as e:
         return {"error": f"Error generating block: {e}"}, 500
 
@@ -86,7 +86,7 @@ def generate_block():
 
 @app.route('/nodes')
 def nodes():
-    return jsonify(get_nodes())
+    return jsonify(get_nodes_info())
 
 @app.route('/blocks/<hash>')
 def block(hash):

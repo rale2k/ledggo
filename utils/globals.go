@@ -9,8 +9,17 @@ import (
 // Globals
 var RunningPort = 8080
 
-var Nodes = []domain.Node{}
 var Blocks = []domain.Block{}
+var BlocksInTx = []domain.Block{}
+
+var State = domain.State{
+	Role: domain.COORDINATOR,
+	Coordinator: domain.Node{
+		Ip:   "127.0.0.1",
+		Port: "8080",
+	},
+	Nodes: []domain.Node{},
+}
 
 func AppendNodesFromIPStringCSV(nodesCsv string) {
 	if len(nodesCsv) == 0 {
@@ -25,9 +34,14 @@ func AppendNodesFromIPStringCSV(nodesCsv string) {
 func AppendNodes(nodes []domain.Node) {
 	for _, node := range nodes {
 		if IsNodeValid(node) {
-			Nodes = append(Nodes, node)
+			State.Nodes = append(State.Nodes, node)
 		}
 	}
+}
+
+func SetCoordinator(node domain.Node) {
+	State.Coordinator = node
+	State.Role = domain.NODE
 }
 
 func AppendNodesFromIPString(node string) {
@@ -41,7 +55,7 @@ func AppendNodesFromIPString(node string) {
 		}
 
 		if IsNodeValid(newNode) {
-			Nodes = append(Nodes, newNode)
+			State.Nodes = append(State.Nodes, newNode)
 		}
 	}
 }
@@ -51,7 +65,7 @@ func IsNodeValid(node domain.Node) bool {
 		return false
 	}
 
-	for _, n := range Nodes {
+	for _, n := range State.Nodes {
 		if n.Ip == node.Ip && n.Port == node.Port {
 			return false
 		}
@@ -60,9 +74,9 @@ func IsNodeValid(node domain.Node) bool {
 }
 
 func RemoveNode(nodeToRemove domain.Node) {
-	for i, node := range Nodes {
+	for i, node := range State.Nodes {
 		if node.Ip == nodeToRemove.Ip && node.Port == nodeToRemove.Port {
-			Nodes = append(Nodes[:i], Nodes[i+1:]...)
+			State.Nodes = append(State.Nodes[:i], State.Nodes[i+1:]...)
 			break
 		}
 	}

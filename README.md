@@ -13,7 +13,7 @@ Blocks are submitted through the ```POST /blocks``` endpoint, hash and data in J
 When nodes communicate with eachother, they use a http header named ```node-ip``` that contains the location of the sending node in the form ```{ip}:{port}```. Using GIN middleware every request is checked for this header and if it is present, the node is saved to the recipient.
 
 ### Problems
-* On a single machine(ryzen 7600x) up to 200 nodes work somewhat smoothly. More  nodes may work if the transactions are submitted at a slow rate.
+* On a single machine(ryzen 7600x) up to 200 nodes work somewhat smoothly. More nodes may work if the transactions are submitted at a slow rate.
 * Because of the agressive peer discovery, eventually, most of the time all nodes know all other nodes. With a large network the flooding of new blocks is very severe.
 * If a node gets the same block from 2 neighbours at the same time, there may be a race condition where they both check that the block is valid, and they both add it into the chain. Needs a lock or something.
 
@@ -74,3 +74,12 @@ When nodes communicate with eachother, they use a http header named ```node-ip``
 **GET /latest_blocks** - Returns the latest block from each node in the network..
 
 **POST /generate_block** - Generates a new block and adds it to a randomly selected node in the network.
+
+## Create 2 blocks simultaneously
+```shell
+(
+  curl -X POST http://127.0.0.1:8080/blocks -H "Content-Type: application/json" -d '{"data": "poRKTYVHdP", "hash": "973f3d3473f1ccf71249f2e6166544fdec3d356a147fb742793004eef91573bd"}' &
+  curl -X POST http://127.0.0.1:8081/blocks -H "Content-Type: application/json" -d '{"data": "prtUywVBrm", "hash": "301883e18ebd27cb1290921f676f8c5dd18891781f9d870d3f9b7c0cdc8aa516"}' &
+  wait
+)
+```

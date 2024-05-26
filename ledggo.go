@@ -25,11 +25,13 @@ func main() {
 
 	router.Use(utils.SaveNodeRequestIp)
 
-	router.GET("/nodes", api.GetKnownNodes)
+	router.GET("/info", api.GetNodeInfo)
 	router.GET("/blocks", api.GetBlock)
 	router.GET("/blocks/last", api.GetLastBlock)
 	router.GET("/blocks/count", api.GetLedgerLength)
 	router.POST("/blocks", api.PostBlock)
+	router.POST("/commit", api.CommitBlocksInTx)
+	router.POST("/cancel", api.CancelBlocksInTx)
 
 	router.Run("localhost:" + strconv.Itoa(*port))
 }

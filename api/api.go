@@ -11,8 +11,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func GetKnownNodes(c *gin.Context) {
-	c.JSON(http.StatusOK, utils.Nodes)
+func GetNodeInfo(c *gin.Context) {
+	c.JSON(http.StatusOK, utils.State)
 }
 
 func GetLedgerLength(c *gin.Context) {
@@ -69,13 +69,31 @@ func PostBlock(c *gin.Context) {
 		return
 	}
 
-	if err := ledger.AddNewBlock(block); err != nil {
+	if err := ledger.AddNewBlockToTx(block); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		fmt.Println(err.Error())
 		return
 	}
 
-	go p2p.DistributeNewBlock(block, c.Request.RemoteAddr)
+	if utils.State.Role == domain.COORDINATOR {
+		go p2p.DistributeNewBlock(block, c.Request.RemoteAddr)
+		ledger.CommitBlocksFromTx()
+	}
 
+	c.Status(http.StatusOK)
+}
+
+func CommitBlocksInTx(c *gin.Context) {
+	if err := ledger.CommitBlocksFromTx(); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		fmt.Println(err.Error())
+		return
+	}
+
+	c.Status(http.StatusOK)
+}
+
+func CancelBlocksInTx(c *gin.Context) {
+	ledger.CancelBlocksInTx()
 	c.Status(http.StatusOK)
 }

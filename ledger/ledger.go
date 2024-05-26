@@ -27,6 +27,15 @@ func AddNewBlock(block domain.Block) error {
 	return nil
 }
 
+func AddNewBlockToTx(block domain.Block) error {
+	if err := validateBlockHash(&block, utils.Blocks); err != nil {
+		return err
+	}
+
+	utils.BlocksInTx = append(utils.BlocksInTx, block)
+	return nil
+}
+
 func GetBlockWithHash(hash string) (block domain.Block, err error) {
 	for _, block := range utils.Blocks {
 		if block.Hash == hash {
@@ -58,4 +67,22 @@ func validateBlockHash(newBlock *domain.Block, previousBlocks []domain.Block) er
 	}
 
 	return nil
+}
+
+func CommitBlocksFromTx() error {
+	var previousBlocks = append([]domain.Block(nil), utils.Blocks...)
+	for _, block := range utils.BlocksInTx {
+		err := AddNewBlock(block)
+		if err != nil {
+			utils.Blocks = previousBlocks
+			CancelBlocksInTx()
+			return err
+		}
+	}
+
+	return nil
+}
+
+func CancelBlocksInTx() {
+	utils.BlocksInTx = []domain.Block{}
 }
