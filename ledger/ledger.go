@@ -44,7 +44,6 @@ func GetBlockWithHash(hash string) (block domain.Block, err error) {
 	}
 
 	return domain.Block{}, fmt.Errorf("could not find block with hash: %s", hash)
-
 }
 
 func BlockExists(hash string) bool {
@@ -80,6 +79,7 @@ func CommitBlocksFromTx() error {
 		}
 	}
 
+	CancelBlocksInTx()
 	return nil
 }
 

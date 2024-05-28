@@ -4,6 +4,7 @@ import (
 	"ledggo/domain"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 // Globals
@@ -11,6 +12,7 @@ var RunningPort = 8080
 
 var Blocks = []domain.Block{}
 var BlocksInTx = []domain.Block{}
+var TxMutex sync.Mutex
 
 var State = domain.State{
 	Role: domain.COORDINATOR,

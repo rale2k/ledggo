@@ -26,7 +26,8 @@ func main() {
 	router.Use(utils.SaveNodeRequestIp)
 
 	router.GET("/info", api.GetNodeInfo)
-	router.GET("/blocks", api.GetBlock)
+	router.GET("/blocks", api.GetBlocks)
+	router.GET("/txblocks", api.GetTxBlocks)
 	router.GET("/blocks/last", api.GetLastBlock)
 	router.GET("/blocks/count", api.GetLedgerLength)
 	router.POST("/blocks", api.PostBlock)

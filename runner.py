@@ -36,6 +36,19 @@ def get_blocks():
             print(f"Error getting blocks from {ip}:{port}: {e}")
     return blocks
 
+def get_tx_blocks():
+    blocks = {}
+    for ip_port in app.config['nodes']:
+        ip, port = ip_port.split(':')
+        url = f"http://{ip}:{port}/txblocks"
+        try:
+            response = requests.get(url)
+            if response.status_code == 200:
+                blocks[ip_port] = response.json()
+        except requests.RequestException as e:
+            print(f"Error getting blocks in tx from {ip}:{port}: {e}")
+    return blocks
+
 def select_random_node():
     nodes = app.config['nodes']
     return random.choice(nodes)
@@ -104,6 +117,10 @@ def block(hash):
 @app.route('/blocks')
 def all_blocks():
     return jsonify(get_blocks())
+
+@app.route('/txblocks')
+def tx_blocks():
+    return jsonify(get_tx_blocks())
 
 @app.route('/latest_blocks')
 def latest_blocks():

@@ -30,7 +30,7 @@ func GetLastBlock(c *gin.Context) {
 	c.JSON(http.StatusOK, lastBlock)
 }
 
-func GetBlock(c *gin.Context) {
+func GetBlocks(c *gin.Context) {
 	var hash = c.Query("hash")
 
 	if hash == "" {
@@ -45,6 +45,10 @@ func GetBlock(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, block)
+}
+
+func GetTxBlocks(c *gin.Context) {
+	c.JSON(http.StatusOK, utils.BlocksInTx)
 }
 
 func PostBlock(c *gin.Context) {
@@ -69,6 +73,11 @@ func PostBlock(c *gin.Context) {
 		return
 	}
 
+	if utils.State.Role == domain.COORDINATOR {
+		utils.TxMutex.Lock()
+		defer utils.TxMutex.Unlock()
+	}
+
 	if err := ledger.AddNewBlockToTx(block); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		fmt.Println(err.Error())
@@ -76,7 +85,7 @@ func PostBlock(c *gin.Context) {
 	}
 
 	if utils.State.Role == domain.COORDINATOR {
-		go p2p.DistributeNewBlock(block, c.Request.RemoteAddr)
+		p2p.DistributeNewBlock(block, c.Request.RemoteAddr)
 		ledger.CommitBlocksFromTx()
 	}
 
